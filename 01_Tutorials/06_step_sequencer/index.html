@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="main.css">
+  <title>Strudel Step Sequencer</title>
+</head>
+
+<body>
+  <a class="back-link" href="https://alexcodesart.com" target="_blank" rel="noopener noreferrer">← Back to Blog</a>
+  <header class="page-header">
+    <a class="brand-logo-link" href="https://alexcodesart.com" target="_blank" rel="noopener noreferrer" aria-label="Alex Codes Art">
+      <img src="assets/logo-horizontal.png" alt="Alex Codes Art" width="1024" height="162" class="brand-logo brand-logo-top" decoding="async">
+    </a>
+    <p class="page-eyebrow">Pattern sequencer</p>
+    <h1 class="page-title"><span class="page-title-brand">Strudel</span> Step Sequencer</h1>
+  </header>
+  <main class="page-main">
+  <div class="controls">
+    <button id="toggle-settings" class="toggle-settings-btn" aria-label="Toggle settings">
+      <span class="toggle-icon">▼</span>
+    </button>
+    <div class="controls-row controls-row-top">
+      <div class="button-group">
+        <button id="play">play</button>
+        <button id="stop">stop</button>
+      </div>
+      <div class="export-group" title="Exports 4 pattern loops">
+        <button type="button" id="export-wav" class="export-btn">WAV</button>
+        <button type="button" id="export-midi" class="export-btn">MIDI</button>
+      </div>
+      <div class="cpm-control">
+        <label for="cpm-slider">BPM: <span id="cpm-value">60</span></label>
+        <input type="range" id="cpm-slider" min="10" max="300" value="60" step="1">
+      </div>
+    </div>
+    <div class="controls-row controls-row-bottom" id="settings-row" style="display: none;">
+      <div class="bank-control">
+        <label for="bank-select">Samples Bank:</label>
+        <select id="bank-select" class="bank-select"></select>
+      </div>
+      <div class="time-signature-control">
+        <label for="time-signature-select">Time Signature:</label>
+        <select id="time-signature-select" class="time-signature-select">
+          <option value="3">3/4</option>
+          <option value="4" selected>4/4</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <div id="container">
+    <div id="add-instrument-container"></div>
+  </div>
+  <section class="donate-section">
+    <p class="donate-copy">If you like this and would like to support me building more creative coding tools, please consider a donation.</p>
+    <a href="https://alexcodesart.com/#/portal/support" target="_blank" rel="noopener noreferrer" class="donate-btn">Support This Project</a>
+  </section>
+  <footer class="page-footer">
+    <div class="license-notice" role="note">
+      <p class="license-notice-title">Strudel and licensing</p>
+      <p class="license-notice-body">
+        This app uses <a href="https://strudel.cc/" target="_blank" rel="noopener noreferrer">Strudel</a>
+        (<code>@strudel/web</code>), which is
+        <a href="https://www.gnu.org/licenses/agpl-3.0.en.html" target="_blank" rel="noopener noreferrer">GNU AGPL-3.0</a>.
+        Per Strudel&rsquo;s <a href="https://strudel.cc/technical-manual/project-start/" target="_blank" rel="noopener noreferrer">project guide</a>,
+        derivative work must stay free/open under a compatible license, and source must accompany any published version of the app.
+      </p>
+      <p class="license-notice-links">
+        <a href="https://github.com/alexandru-postolache/step-sequencer" target="_blank" rel="noopener noreferrer">Source code for this site</a>
+        <span class="license-notice-sep" aria-hidden="true">·</span>
+        <a href="https://www.gnu.org/licenses/agpl-3.0.en.html" target="_blank" rel="noopener noreferrer">Read the AGPL-3.0</a>
+      </p>
+    </div>
+    <a class="brand-logo-link" href="https://alexcodesart.com" target="_blank" rel="noopener noreferrer" aria-label="Alex Codes Art">
+      <img src="assets/logo-horizontal.png" alt="Alex Codes Art" width="1024" height="162" class="brand-logo brand-logo-bottom" decoding="async">
+    </a>
+  </footer>
+  </main>
+  <script src="https://unpkg.com/@strudel/web@1.3.0"></script>
+  <script>
+    initStrudel({
+      prebake: () => loadSamples()
+    });
+    async function loadSamples() {
+  const ds = "https://raw.githubusercontent.com/felixroos/dough-samples/main/";
+  return Promise.all([
+    samples(`${ds}/tidal-drum-machines.json`),
+    // samples(`${ds}/piano.json`),
+    // samples(`${ds}/Dirt-Samples.json`),
+    // samples(`${ds}/EmuSP12.json`),
+    // samples(`${ds}/vcsl.json`),
+    // samples(`${ds}/mridangam.json`),
+  ]);
+}
+  </script>
+  <script src="export.js"></script>
+  <script src="main.js"></script>
+  <script>
+    const stepSequencer = new StepSequencer();
+    stepSequencer.init();
+    
+    // Load banks and setup selector
+    stepSequencer.loadBanks().then(() => {
+      // Setup bank selector change handler after banks are loaded
+      const bankSelect = document.getElementById('bank-select');
+      if (bankSelect) {
+        bankSelect.addEventListener('change', (e) => {
+          stepSequencer.updateBank(e.target.value);
+        });
+      }
+    });
+    
+    document.getElementById('play').addEventListener('click', () => stepSequencer.play());
+    document.getElementById('stop').addEventListener('click', () => stepSequencer.stop());
+    document.getElementById('export-wav').addEventListener('click', () => stepSequencer.exportWav());
+    document.getElementById('export-midi').addEventListener('click', () => stepSequencer.exportMidi());
+    
+    // CPM slider
+    const cpmSlider = document.getElementById('cpm-slider');
+    const cpmValue = document.getElementById('cpm-value');
+    
+    cpmSlider.addEventListener('input', (e) => {
+      const value = parseInt(e.target.value);
+      cpmValue.textContent = value;
+      stepSequencer.updateCpm(value);
+    });
+    
+    // Time signature selector
+    const timeSignatureSelect = document.getElementById('time-signature-select');
+    if (timeSignatureSelect) {
+      timeSignatureSelect.addEventListener('change', (e) => {
+        stepSequencer.updateMeasure(e.target.value);
+      });
+    }
+    
+    // Toggle settings button
+    const toggleSettingsBtn = document.getElementById('toggle-settings');
+    const settingsRow = document.getElementById('settings-row');
+    const controlsRowTop = document.querySelector('.controls-row-top');
+    const controlsContainer = document.querySelector('.controls');
+    if (toggleSettingsBtn && settingsRow && controlsRowTop && controlsContainer) {
+      toggleSettingsBtn.addEventListener('click', () => {
+        const isVisible = settingsRow.style.display !== 'none' && settingsRow.style.display !== '';
+        if (isVisible) {
+          settingsRow.style.display = 'none';
+          toggleSettingsBtn.classList.remove('active');
+          controlsRowTop.classList.remove('has-settings');
+          controlsContainer.classList.remove('has-expanded-settings');
+        } else {
+          settingsRow.style.display = 'flex';
+          toggleSettingsBtn.classList.add('active');
+          controlsRowTop.classList.add('has-settings');
+          controlsContainer.classList.add('has-expanded-settings');
+        }
+      });
+    }
+  </script>
+</body>
+
+</html>
